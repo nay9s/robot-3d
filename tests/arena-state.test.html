@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ทดสอบการคำนวณสนาม</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; }
+    [data-status="pass"] { color: #08783e; }
+    [data-status="fail"] { color: #b42318; }
+    li { margin-block: 0.4rem; }
+  </style>
+</head>
+<body>
+  <h1>ผลทดสอบการคำนวณสนาม</h1>
+  <p id="summary" data-status="running">กำลังทดสอบ…</p>
+  <ol id="results"></ol>
+  <script type="module">
+    const summary = document.querySelector('#summary');
+    const results = document.querySelector('#results');
+    let passed = 0;
+    let failed = 0;
+
+    function record(name, error) {
+      const item = document.createElement('li');
+      item.textContent = error ? `${name}: ${error.message}` : `${name}: ผ่าน`;
+      item.dataset.status = error ? 'fail' : 'pass';
+      results.append(item);
+      error ? failed++ : passed++;
+      fetch('/log?msg=' + encodeURIComponent((error ? 'FAIL: ' : 'PASS: ') + name + (error ? ' :: ' + error.message : ''))).catch(() => {});
+    }
+
+    function equal(actual, expected) {
+      if (!Object.is(actual, expected)) {
+        throw new Error(`คาดว่า ${expected} แต่ได้ ${actual}`);
+      }
+    }
+
+    function ok(value, message) {
+      if (!value) throw new Error(message);
+    }
+
+    function throwsRangeError(callback) {
+      try {
+        callback();
+      } catch (error) {
+        if (error instanceof RangeError) return;
+        throw new Error(`คาดว่าเป็น RangeError แต่ได้ ${error.constructor.name}`);
+      }
+      throw new Error('คาดว่าจะเกิด RangeError');
+    }
+
+    function test(name, callback) {
+      try {
+        callback();
+        record(name);
+      } catch (error) {
+        record(name, error);
+      }
+    }
+
+    async function asyncTest(name, callback) {
+      try {
+        await callback();
+        record(name);
+      } catch (error) {
+        record(name, error);
+      }
+    }
+
+    try {
+      const {
+        ARENA,
+        inchesToMetres,
+        validateDie,
+        rollDirectionDie,
+        rollBoxDice,
+        directionForDie,
+        safeRadiusFor,
+        buildArenaState,
+        cameraDistanceForFit,
+      } = await import('../arena-state.js?v=9');
+
+      test('แปลงกระเบื้อง 4.5 นิ้วเป็น 0.1143 เมตร', () => {
+        equal(inchesToMetres(4.5), 0.1143);
+      });
+
+      test('ปฏิเสธผลรวมกล่องที่ไม่ใช่จำนวนเต็ม 2–12', () => {
+        for (const value of [0, 1, 13, 1.5, '3', NaN]) {
+          throwsRangeError(() => validateDie(value));
+        }
+      });
+
+      test('สุ่มทิศรถ 1–6 และแต้มกล่อง 2–12', () => {
+        equal(rollDirectionDie(() => 0), 1);
+        equal(rollDirectionDie(() => 0.999999), 6);
+        equal(rollBoxDice(() => 0), 2);
+        equal(rollBoxDice(() => 0.999999), 12);
+      });
+
+      test('แต้ม 1 หันบน, 2 หันขวา, 3 หันล่าง และหมุนตามเข็มนาฬิกา', () => {
+        const expected = [
+          [1, 'บน', -Math.PI],
+          [2, 'ขวา', -Math.PI - Math.PI / 2],
+          [3, 'ล่าง', -Math.PI - Math.PI],
+          [4, 'ซ้าย', -Math.PI - 3 * Math.PI / 2],
+          [5, 'บน', -Math.PI - 2 * Math.PI],
+          [6, 'ขวา', -Math.PI - 5 * Math.PI / 2],
+        ];
+        for (const [die, label, rotationY] of expected) {
+          equal(directionForDie(die).label, label);
+          ok(Math.abs(directionForDie(die).rotationY - rotationY) < 1e-9, `มุม rotationY ของแต้ม ${die} ไม่ตรง (ได้ ${directionForDie(die).rotationY}, คาดว่า ${rotationY})`);
+        }
+      });
+
+      test('ปฏิเสธแต้มทิศรถนอกช่วง 1–6', () => {
+        for (const value of [0, 7, 1.5, '3', NaN]) throwsRangeError(() => directionForDie(value));
+      });
+
+      test('ตรวจสอบพิกัดจุดวางและขนาดช่องวางของหุ่นยนต์', () => {
+        equal(ARENA.width, 2.90);
+        equal(ARENA.depth, 3.25);
+        equal(ARENA.robot.x, ARENA.width / 2 - 0.30 - 0.15);
+        equal(ARENA.robot.z, -ARENA.depth / 2 + 0.35 + 0.15);
+        equal(ARENA.startZone.width, 0.30);
+        equal(ARENA.startZone.depth, 0.30);
+        equal(ARENA.startZone.x, ARENA.robot.x);
+        equal(ARENA.startZone.z, ARENA.robot.z);
+        const zoneTop = ARENA.startZone.z - ARENA.startZone.depth / 2;
+        const zoneRight = ARENA.startZone.x + ARENA.startZone.width / 2;
+        ok(Math.abs((zoneTop + ARENA.depth / 2) - 0.35) < 1e-6, 'ขอบช่องวางต้องห่างขอบบน 0.35 ม.');
+        ok(Math.abs((ARENA.width / 2 - zoneRight) - 0.30) < 1e-6, 'ขอบช่องวางต้องห่างขอบขวา 0.30 ม.');
+      });
+
+      test('คำนวณรัศมีครอบหุ่นยนต์รวมระยะเผื่อ', () => {
+        const radius = safeRadiusFor({ width: 0.16, length: 0.25, clearance: 0.10 });
+        equal(Number(radius.toFixed(6)), 0.248408);
+      });
+
+      test('กล่องสองใบเคลื่อนคนละทิศและไม่ออกนอกสนาม', () => {
+        const minState = buildArenaState({ directionDie: 1, leftDie: 2, rightDie: 2 });
+        const maxState = buildArenaState({ directionDie: 6, leftDie: 12, rightDie: 12 });
+        ok(maxState.leftBoxX > minState.leftBoxX, 'กล่องซ้ายไม่ได้เคลื่อนไปทางขวา');
+        ok(maxState.rightBoxX < minState.rightBoxX, 'กล่องขวาไม่ได้เคลื่อนไปทางซ้าย');
+        equal(minState.leftShiftMetres, 0.29);
+        equal(maxState.leftShiftMetres, 1.74);
+        equal(maxState.rightShiftMetres, 1.74);
+        ok(maxState.leftBoxX + ARENA.leftBox.width / 2 <= ARENA.width / 2, 'กล่องซ้ายออกนอกสนาม');
+        ok(maxState.rightBoxX - ARENA.rightBox.width / 2 >= -ARENA.width / 2, 'กล่องขวาออกนอกสนาม');
+        ok(ARENA.rightBox.z - ARENA.rightBox.depth / 2 > ARENA.depth / 6,
+          'กล่องขวาทั้งใบต้องอยู่ใต้รอยต่อแผงผนังเส้นล่าง');
+      });
+
+      test('คำนวณระยะกล้องให้เห็นสนามครบที่หน้าจอแคบ', () => {
+        const distance = cameraDistanceForFit({
+          aspect: 305 / 440,
+          verticalFovDegrees: 43,
+          span: 3.5,
+          margin: 1.08,
+        });
+        equal(Number(distance.toFixed(6)), 6.921769);
+      });
+    } catch (error) {
+      record('โหลดโมดูล arena-state.js', error);
+    }
+
+    try {
+      const {
+        SETTINGS_KEY,
+        DEFAULT_SETTINGS,
+        validateSettings,
+        loadSettings,
+      } = await import('../settings-store.js?v=16');
+
+      test('ปฏิเสธ Settings ที่อยู่นอกช่วง', () => {
+        const result = validateSettings({ ...DEFAULT_SETTINGS, width: 0.05, gridSize: 0.03 });
+        ok(!result.ok, 'Settings ที่ผิดช่วงต้องไม่ผ่าน');
+        ok(result.errors.width, 'ต้องแจ้งข้อผิดพลาดความกว้าง');
+        ok(result.errors.gridSize, 'ต้องแจ้งข้อผิดพลาดความละเอียด');
+      });
+
+      test('ปฏิเสธขา Ultrasonic ที่ซ้ำกับมอเตอร์ Encoder หรือกันเอง', () => {
+        const motorConflict = validateSettings({ ...DEFAULT_SETTINGS, ultrasonicTrigPin: 5 });
+        ok(!motorConflict.ok && motorConflict.errors.ultrasonicTrigPin, 'ต้องปฏิเสธ TRIG ที่ซ้ำกับ ENA');
+        const servoConflict = validateSettings({ ...DEFAULT_SETTINGS, ultrasonicEchoPin: 11 });
+        ok(!servoConflict.ok && servoConflict.errors.ultrasonicEchoPin, 'ต้องปฏิเสธ ECHO ที่ซ้ำกับ Servo');
+        const samePin = validateSettings({ ...DEFAULT_SETTINGS, ultrasonicEchoPin: 13 });
+        ok(!samePin.ok && samePin.errors.ultrasonicEchoPin, 'ต้องปฏิเสธ TRIG/ECHO ที่ใช้พินเดียวกัน');
+        equal(DEFAULT_SETTINGS.ultrasonicTrigPin, 13);
+        equal(DEFAULT_SETTINGS.ultrasonicEchoPin, 12);
+      });
+
+      test('ตั้งค่าโปรไฟล์สนามจริงเป็นค่าเริ่มต้น', () => {
+        equal(DEFAULT_SETTINGS.invertTurnDirection, true);
+        equal(DEFAULT_SETTINGS.turnRight45LeftTicks, 14.5);
+        equal(DEFAULT_SETTINGS.turnRight90LeftTicks, 30);
+        equal(DEFAULT_SETTINGS.turnRight180RightTicks, 52);
+        equal(DEFAULT_SETTINGS.turnLeft90RightTicks, 28);
+        equal(DEFAULT_SETTINGS.planningMode, 'pass');
+        equal(DEFAULT_SETTINGS.directLine, false);
+        equal(DEFAULT_SETTINGS.directSafetyMargin, 0.20);
+        equal(DEFAULT_SETTINGS.preferRightTurns, true);
+        equal(DEFAULT_SETTINGS.speed, 0.87);
+        equal(DEFAULT_SETTINGS.straightDistanceScale, 1.00);
+        equal(DEFAULT_SETTINGS.leftCmPerTick, 0.55);
+        equal(DEFAULT_SETTINGS.rightCmPerTick, 0.55);
+        equal(DEFAULT_SETTINGS.ultrasonicStopDist, 25);
+        equal(DEFAULT_SETTINGS.useUltrasonicScan, true);
+        equal(DEFAULT_SETTINGS.ultrasonicOpenDist, 45);
+        equal(DEFAULT_SETTINGS.servoCenterAngle, 90);
+        equal(DEFAULT_SETTINGS.servoScanOffset, 45);
+        const result = validateSettings(DEFAULT_SETTINGS);
+        ok(result.ok, 'ค่า Settings เริ่มต้นต้องผ่านการตรวจสอบ');
+        equal(result.value.invertTurnDirection, true);
+        equal(result.value.turnRight90LeftTicks, 30);
+        equal(result.value.turnLeft180RightTicks, 56);
+        equal(result.value.preferRightTurns, true);
+      });
+
+      test('กู้คืนค่าเริ่มต้นเมื่อ localStorage เสียหาย', () => {
+        localStorage.removeItem(SETTINGS_KEY);
+        localStorage.setItem(SETTINGS_KEY, '{broken');
+        const loaded = loadSettings(localStorage);
+        equal(loaded.width, 0.16);
+        equal(loaded.length, 0.25);
+        equal(localStorage.getItem(SETTINGS_KEY), null);
+
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...DEFAULT_SETTINGS, clearance: 2 }));
+        const outOfRange = loadSettings(localStorage);
+        equal(outOfRange.clearance, 0.15);
+        equal(localStorage.getItem(SETTINGS_KEY), null);
+        localStorage.removeItem(SETTINGS_KEY);
+      });
+    } catch (error) {
+      record('โหลดโมดูล settings-store.js', error);
+    }
+
+    try {
+      const { ARENA, buildArenaState } = await import('../arena-state.js?v=9');
+      const { DEFAULT_SETTINGS } = await import('../settings-store.js?v=16');
+      const {
+        buildCollisionContext,
+        pointIsBlocked,
+        lineIsClear,
+        simplifyOrthogonalPath,
+        buildCommands,
+        planRoute,
+      } = await import('../path-planner.js?v=20');
+
+      test('ขยายพื้นที่ชนตามรัศมีปลอดภัย', () => {
+        const box = { minX: -0.2, maxX: 0.2, minZ: -0.2, maxZ: 0.2, x: 0, z: 0 };
+        const context = {
+          safeRadius: 0.20,
+          obstacles: [box],
+          bounds: { minX: -1.5, maxX: 1.5, minZ: -1.5, maxZ: 1.8 },
+          exit: { minX: -1.5, maxX: -0.5, edgeZ: 1.5 },
+        };
+        ok(pointIsBlocked({ x: box.minX - 0.19, z: box.z }, context), 'จุดในระยะเผื่อต้องชน');
+        ok(!pointIsBlocked({ x: box.minX - 0.21, z: box.z }, context), 'จุดนอกระยะเผื่อต้องผ่านได้');
+      });
+
+      test('ทางตรงเพิ่มระยะเผื่อจากกล่องสำหรับความคลาดเคลื่อนของมุม', () => {
+        const context = {
+          safeRadius: 0.20,
+          obstacles: [{ minX: -0.2, maxX: 0.2, minZ: -0.2, maxZ: 0.2, kind: 'left-box' }],
+          bounds: { minX: -2, maxX: 2, minZ: -2, maxZ: 2 },
+          exit: { minX: -2, maxX: 2, edgeZ: 2 },
+        };
+        const from = { x: -1, z: 0.52 };
+        const to = { x: 1, z: 0.52 };
+        ok(lineIsClear(from, to, context), 'แนวเดิมต้องผ่านเมื่อไม่มีระยะเผื่อเพิ่ม');
+        ok(!lineIsClear(from, to, context, 0.015, 0.20), 'แนวเดียวกันต้องถูกปฏิเสธเมื่อเสี่ยงเบนไปชนกล่อง');
+      });
+
+      test('ใช้ระยะเผื่อช่องออกตามค่าที่ผู้ใช้ตั้งโดยไม่ลดแบบเงียบ', () => {
+        const diceState = buildArenaState({ directionDie: 3, leftDie: 2, rightDie: 2 });
+        const context = buildCollisionContext({
+          arena: ARENA,
+          diceState,
+          settings: { ...DEFAULT_SETTINGS, clearance: 0.20, exitClearance: 0.06 },
+        });
+        equal(context.exitClearance, 0.06);
+        equal(context.passageRadius, DEFAULT_SETTINGS.width / 2 + 0.06);
+      });
+
+      test('หาเส้นทางจากจุดเริ่มไปช่วงโบนัสโดยไม่ผ่านช่องชน และออกทางฝั่งซ้าย 19 นิ้ว', () => {
+        const diceState = buildArenaState({ directionDie: 4, leftDie: 2, rightDie: 2 });
+        const scoreSettings = { ...DEFAULT_SETTINGS, planningMode: 'score' };
+        const context = buildCollisionContext({ arena: ARENA, diceState, settings: scoreSettings });
+        const result = planRoute({ arena: ARENA, diceState, settings: scoreSettings });
+        equal(result.status, 'found');
+        equal(result.goalType, 'bonus');
+        equal(result.usedFallback, false);
+        const exitPoint = result.points[result.points.length - 1];
+        const bonusMaxX = -ARENA.width / 2 + ARENA.bonusWidth;
+        ok(exitPoint.x >= -ARENA.width / 2 + context.passageRadius
+          && exitPoint.x <= bonusMaxX - context.passageRadius,
+        `จุดออกต้องอยู่ในช่วงโบนัสที่รถผ่านได้ (ได้ X=${exitPoint.x})`);
+        for (const point of result.points) ok(!pointIsBlocked(point, context), 'เส้นทางห้ามผ่านพื้นที่ชน');
+      });
+
+      test('ถอยไปทางออกปกติเมื่อช่วงโบนัสแคบเกินไป', () => {
+        const arena = { ...ARENA, bonusWidth: 0.15, exitWidth: 1.20 };
+        const settings = { ...DEFAULT_SETTINGS, width: 0.20, length: 0.20, clearance: 0.05, planningMode: 'score' };
+        const diceState = buildArenaState({ directionDie: 4, leftDie: 2, rightDie: 2 });
+        const result = planRoute({ arena, diceState, settings });
+        equal(result.status, 'found');
+        equal(result.goalType, 'regular');
+        equal(result.usedFallback, true);
+      });
+
+      test('ไม่คืนเส้นทางเมื่อจุดเริ่มถูกบัง', () => {
+        const settings = { ...DEFAULT_SETTINGS, width: 0.80, length: 0.80, clearance: 0.50 };
+        const diceState = buildArenaState({ directionDie: 4, leftDie: 2, rightDie: 2 });
+        const result = planRoute({ arena: ARENA, diceState, settings });
+        equal(result.status, 'start_blocked');
+        equal(result.points.length, 0);
+      });
+
+      test('ลดจุดแนวตรงและสร้างคำสั่งตามทิศเริ่มต้น', () => {
+        const points = simplifyOrthogonalPath([
+          { x: 1, z: -1 }, { x: 1, z: 0 }, { x: 1, z: 1 }, { x: 0, z: 1 },
+        ]);
+        equal(points.length, 3);
+        const result = buildCommands(points, 'ล่าง', { ...DEFAULT_SETTINGS, speed: 0.5, turnSeconds90: 0.4 });
+        equal(result.commands[0].type, 'forward');
+        equal(result.commands[0].distance, 2);
+        equal(result.commands[1].type, 'turn-right');
+        equal(result.commands[1].degrees, 90);
+        equal(result.totalDistance, 3);
+        equal(result.turnCount, 1);
+        equal(result.estimatedSeconds, 6.4);
+      });
+
+      test('เส้นทางไม่ชนสำหรับลูกเต๋าทุกค่าและทั้งสองโหมด', () => {
+        for (const planningMode of ['score', 'pass']) {
+          const settings = { ...DEFAULT_SETTINGS, planningMode };
+          for (const directionDie of [1, 2, 3, 4, 5, 6]) {
+            for (const leftDie of [2, 8, 12]) {
+              for (const rightDie of [2, 8, 12]) {
+                const diceState = buildArenaState({ directionDie, leftDie, rightDie });
+                const context = buildCollisionContext({ arena: ARENA, diceState, settings });
+                const result = planRoute({ arena: ARENA, diceState, settings });
+                equal(result.status, 'found');
+                for (const segment of result.segments) {
+                  const samples = Math.max(1, Math.ceil(segment.distance / 0.025));
+                  for (let sample = 0; sample <= samples; sample++) {
+                    const ratio = sample / samples;
+                    const point = {
+                      x: segment.from.x + (segment.to.x - segment.from.x) * ratio,
+                      z: segment.from.z + (segment.to.z - segment.from.z) * ratio,
+                    };
+                    ok(!pointIsBlocked(point, context), `เส้นทางชนในโหมด ${planningMode} เมื่อแต้มเป็น ${directionDie}/${leftDie}/${rightDie}`);
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      test('คำนวณเส้นทางมาตรฐานภายใน 250 มิลลิวินาที', () => {
+        const diceState = buildArenaState({ directionDie: 4, leftDie: 3, rightDie: 3 });
+        const startedAt = performance.now();
+        planRoute({ arena: ARENA, diceState, settings: DEFAULT_SETTINGS });
+        const elapsed = performance.now() - startedAt;
+        ok(elapsed < 250, `ใช้เวลานานเกินไป: ${elapsed.toFixed(2)} ms`);
+      });
+
+      test('สร้างคำสั่งถอยหลังเมื่อทิศทางตรงข้ามกับทิศหุ่นยนต์ (reverse)', () => {
+        const points = [
+          { x: 1, z: 0 }, { x: -1, z: 0 },
+        ];
+        const result = buildCommands(points, 'ขวา', DEFAULT_SETTINGS);
+        equal(result.commands[0].type, 'reverse');
+        equal(result.commands[0].distance, 2);
+        equal(result.commands[0].label, 'ถอยหลัง 2.00 เมตร');
+        equal(result.turnCount, 0);
+      });
+
+      test('โปรไฟล์สนามจริงใช้หมุนขวาและถอยแทนหมุนซ้าย 90°', () => {
+        const points = [
+          { x: 0, z: 0 }, { x: 1, z: 0 },
+        ];
+        const result = buildCommands(points, 'ล่าง', { ...DEFAULT_SETTINGS, preferRightTurns: true });
+        equal(result.commands[0].type, 'turn-right');
+        for (const command of result.commands) {
+          if (command.degrees) equal(command.degrees % 90, 0, 'เมื่อปิดทางตรง โหมด fastest ต้องใช้มุมฉากเท่านั้น');
+        }
+        equal(result.commands[0].degrees, 90);
+        equal(result.commands[1].type, 'reverse');
+      });
+
+      test('โหมด fastest ใช้ทิศหมุนที่ตั้งไว้และยังวางแผนเส้นทางปลอดภัย', () => {
+        const diceState = buildArenaState({ directionDie: 1, leftDie: 2, rightDie: 2 });
+        const result = planRoute({ arena: ARENA, diceState, settings: { ...DEFAULT_SETTINGS, planningMode: 'fastest' } });
+        equal(result.status, 'found');
+        equal(result.commands[0].type, 'turn-right');
+        ok(result.estimatedSeconds > 0, 'เวลาต้องมากกว่าศูนย์');
+      });
+
+      test('โหมด pass (เน้นผ่านปลอดภัย) ใช้ A* กริดมุมฉาก 90° และออกทางช่องปกติ', () => {
+        const diceState = buildArenaState({ directionDie: 2, leftDie: 2, rightDie: 2 });
+        const result = planRoute({ arena: ARENA, diceState, settings: { ...DEFAULT_SETTINGS, planningMode: 'pass' } });
+        equal(result.status, 'found');
+        equal(result.goalType, 'regular');
+        ok(result.reason.includes('A*'), 'เหตุผลต้องระบุว่าใช้อัลกอริทึม A*');
+        for (const command of result.commands) {
+          if (command.degrees) {
+            equal(command.degrees % 90, 0, `การเลี้ยวต้องเป็นมุมฉาก 90° เสมอ ได้: ${command.degrees}°`);
+          }
+        }
+      });
+    } catch (error) {
+      record('โหลดโมดูล path-planner.js', error);
+    }
+
+    try {
+      const { ARENA, buildArenaState } = await import('../arena-state.js?v=9');
+      const { DEFAULT_SETTINGS } = await import('../settings-store.js?v=16');
+      const { buildMeasurementDescriptors } = await import('../measurement-layer.js?v=8');
+
+      test('สร้างข้อมูลวัดสนาม ทางออก กล่อง และเส้นทาง', () => {
+        const descriptors = buildMeasurementDescriptors({
+          arena: ARENA,
+          diceState: buildArenaState({ directionDie: 4, leftDie: 2, rightDie: 3 }),
+          settings: DEFAULT_SETTINGS,
+          route: { segments: [{ from: { x: 1, z: -1 }, to: { x: 1, z: 0 }, distance: 1 }] },
+        });
+        const byId = Object.fromEntries(descriptors.map((item) => [item.id, item]));
+        equal(byId['arena-width'].valueMetres, ARENA.width);
+        equal(byId['arena-length'].valueMetres, ARENA.depth);
+        equal(byId['exit-width'].valueMetres, 0.9906);
+        equal(byId['bonus-width'].valueMetres, 0.4826);
+        equal(byId['start-zone-width'].valueMetres, 0.30);
+        equal(byId['start-zone-depth'].valueMetres, 0.30);
+        equal(byId['start-top-offset'].valueMetres, 0.35);
+        equal(byId['start-right-offset'].valueMetres, 0.30);
+        equal(byId['route-0'].label, '1.00 m');
+        equal(byId['left-shift'].valueMetres, 0.2286);
+        equal(byId['robot-width'].valueMetres, 0.16);
+        equal(byId['robot-length'].valueMetres, 0.25);
+        equal(Number(byId['safe-radius'].valueMetres.toFixed(6)), 0.298408);
+      });
+
+      test('เส้นวัดขนาดหุ่นหมุนตามทิศของหุ่นยนต์', () => {
+        const descriptors = buildMeasurementDescriptors({
+          arena: ARENA,
+          diceState: buildArenaState({ directionDie: 2, leftDie: 2, rightDie: 2 }),
+          settings: DEFAULT_SETTINGS,
+          route: { segments: [] },
+        });
+        const width = descriptors.find((item) => item.id === 'robot-width');
+        ok(Math.abs(width.end.x - width.start.x) < 1e-9, 'เมื่อหันขวา เส้นความกว้างควรหมุนเป็นแนวแกน Z');
+        equal(Number(Math.abs(width.end.z - width.start.z).toFixed(6)), DEFAULT_SETTINGS.width);
+      });
+    } catch (error) {
+      record('โหลดโมดูล measurement-layer.js', error);
+    }
+
+    try {
+      const { createLoadingController } = await import('../arena-loading.js');
+
+      await asyncTest('ซ่อนข้อความโหลดล้มเหลวเมื่อโหลดสำเร็จภายหลัง', async () => {
+        const testDocument = document.implementation.createHTMLDocument('loading');
+        testDocument.body.innerHTML = '<p id="webgl-error" hidden></p>';
+        const controller = createLoadingController(testDocument, 0);
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        const message = testDocument.querySelector('#webgl-error');
+        ok(!message.hidden, 'ข้อความหมดเวลาไม่ปรากฏ');
+        controller.ready();
+        ok(message.hidden, 'ข้อความยังแสดงหลังโหลดสำเร็จ');
+        equal(message.textContent, '');
+      });
+
+      await asyncTest('ไม่เขียนทับข้อความ WebGL ด้วยข้อความหมดเวลา', async () => {
+        const testDocument = document.implementation.createHTMLDocument('failure');
+        testDocument.body.innerHTML = '<p id="webgl-error" hidden></p>';
+        const controller = createLoadingController(testDocument, 0);
+        controller.fail('WebGL ใช้งานไม่ได้');
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        const message = testDocument.querySelector('#webgl-error');
+        equal(message.textContent, 'WebGL ใช้งานไม่ได้');
+        ok(!message.hidden, 'ข้อความ WebGL ถูกซ่อน');
+      });
+    } catch (error) {
+      record('โหลดโมดูล arena-loading.js', error);
+    }
+
+    try {
+      const { generateArduinoCode, calculateRecommendedPwm } = await import('../arduino-exporter.js?v=19');
+
+      test('แปลงคำสั่งเส้นทางเป็นโค้ด Arduino โหมด Encoder (อิง ArduinoProj/combined_state_sequence.ino)', () => {
+        const mockRoute = {
+          totalDistance: 3.79,
+          estimatedSeconds: 11.2,
+          goalType: 'bonus',
+          commands: [
+            { type: 'turn-left', degrees: 50, label: 'หมุนซ้าย 50°' },
+            { type: 'forward', distance: 3.44, label: 'เดินหน้า 3.44 เมตร' },
+            { type: 'turn-left', degrees: 40, label: 'หมุนซ้าย 40°' },
+            { type: 'forward', distance: 0.35, label: 'เดินหน้า 0.35 เมตร' },
+          ],
+        };
+        const code = generateArduinoCode({ route: mockRoute, profile: 'encoder', boardType: 'uno_r4' });
+        ok(code.includes('const int ENA = 5;'), 'ต้องมี PIN ENA 5');
+        ok(code.includes('const int IN1 = 9;'), 'ต้องมี PIN IN1 9');
+        ok(code.includes('const int IN2 = 8;'), 'ต้องมี PIN IN2 8');
+        ok(code.includes('const int ENB = 10;'), 'ต้องมี PIN ENB 10');
+        ok(code.includes('const int IN3 = 7;'), 'ต้องมี PIN IN3 7');
+        ok(code.includes('const int IN4 = 6;'), 'ต้องมี PIN IN4 6');
+        ok(code.includes('#define ENC_L 2'), 'ต้องมี PIN ENC_L 2');
+        ok(code.includes('#define ENC_R 3'), 'ต้องมี PIN ENC_R 3');
+        ok(code.includes('const int SERVO_PIN = 11;'), 'ต้องสงวน Servo Pin 11 ตามการต่อจริง');
+        ok(code.includes('const int TRIG_PIN = 13;'), 'ต้องใช้ Ultrasonic TRIG Pin 13');
+        ok(code.includes('const int ECHO_PIN = 12;'), 'ต้องใช้ Ultrasonic ECHO Pin 12');
+        ok(code.includes('#include <Servo.h>'), 'ต้องใช้ Servo หมุนเซนเซอร์เพื่อสแกนช่องว่าง');
+        ok(code.includes('#define USE_FRONT_GAP_SCAN 1'), 'ต้องเปิดโหมดสแกนช่องว่างตามค่าเริ่มต้น');
+        ok(code.includes('scanFrontGap'), 'ต้องมีฟังก์ชันสแกนซ้าย กลาง และขวา');
+        ok(!code.includes('FrontGapScan'), 'ต้องไม่ใช้ struct ใน signature เพราะ Arduino IDE สร้าง prototype ก่อนประกาศชนิดข้อมูล');
+        ok(code.includes('scanFrontGap(float &leftCM, float &centerCM, float &rightCM)'), 'ต้องส่งผลสแกนผ่านชนิดพื้นฐานที่ Arduino preprocessor รู้จัก');
+        ok(code.includes('readUltrasonicMedianCM'), 'ต้องกรองค่าระยะด้วยค่ากลางสามตัวอย่าง');
+        ok(code.includes('verifyFrontGapBeforeMove'), 'ต้องตรวจช่องว่างก่อนเริ่มคำสั่งเดินหน้า');
+        ok(code.includes('ultrasonicServo.detach()'), 'ต้องปล่อย Servo หลังสแกนเพื่อลดกระแสและอาการสั่น');
+        ok(code.includes('STEP_TURN_LEFT'), 'ต้องมีคำสั่งเลี้ยวซ้าย');
+        ok(code.includes('STEP_FORWARD'), 'ต้องมีคำสั่งเดินหน้า');
+        ok(code.includes('344.0f'), 'ต้องแปลง 3.44 ม. เป็น 344 ซม.');
+        ok(code.includes('analogWriteResolution(12)'), 'Uno R4 ต้องมี 12-bit PWM');
+        ok(code.includes('#ifndef max'), 'ต้องมีนิยาม macro max เพื่อความเข้ากันได้กับ C++');
+        ok(code.includes('robotHeadingDeg -='), 'การหมุนต้องอัปเดตมุม Odometry ให้สอดคล้องกับพิกัดสนาม (เลี้ยวขวามุมลดลง เลี้ยวซ้ายมุมเพิ่มขึ้น)');
+        ok(code.includes('MOTION_OBSTACLE'), 'ต้องแยกสถานะหยุดเมื่อพบสิ่งกีดขวาง');
+        ok(code.includes('if (motionResult != MOTION_OK)'), 'ต้องยกเลิกคำสั่งที่เหลือเมื่อการเคลื่อนที่ไม่สำเร็จ');
+        ok(code.includes('left * LEFT_CM_PER_TICK + right * RIGHT_CM_PER_TICK'),
+          'พิกัดต้องใช้ระยะที่ Encoder วัดจริง รวมระยะไหลหลังเบรก');
+        ok(code.includes('MOTION_STALL'), 'ต้องแยกสถานะล้อติดจากการหมดเวลา');
+        ok(code.includes('MOTION_OBSTACLE'), 'ต้องแยกสถานะ Ultrasonic หยุด');
+        ok(code.includes('EncoderMotion::Profile'), 'ต้องใช้โปรไฟล์เร่งและชะลอ');
+        ok(code.includes('EncoderMotion::Wheel'), 'ต้องคุมความเร็วแต่ละล้อ');
+        ok(code.includes('if (doneL && doneR)'), 'ต้องรอให้ Encoder ทั้งสองล้อถึงเป้าหมาย');
+        ok(code.includes('const bool INVERT_TURN_DIRECTION = true;'), 'ต้องกลับขั้วเลี้ยวให้ตรงกับการต่อมอเตอร์จริง');
+        ok(code.includes('if (now - start < 200)'), 'ต้องจำกัดเวลากระตุ้นออกตัว');
+        ok(/TURN_RIGHT_LEFT_TICKS_90\s+= 30\.00f;/.test(code), 'ต้องส่งออกค่าหมุนขวาจากการทดลองจริง');
+        ok(/TURN_RIGHT_RIGHT_TICKS_90\s+= 27\.00f;/.test(code), 'ต้องส่งออกค่าล้อขวาสำหรับหมุนขวาจากการทดลองจริง');
+        ok(/TURN_LEFT_LEFT_TICKS_90\s+= 29\.00f;/.test(code), 'ต้องส่งออกค่าหมุนซ้ายแยกต่างหาก');
+        ok(/TURN_RIGHT_LEFT_TICKS_45\s+= 14\.50f;/.test(code), 'ต้องส่งออกค่า 45 องศา');
+        ok(/TURN_RIGHT_LEFT_TICKS_180\s+= 58\.00f;/.test(code), 'ต้องส่งออกค่า 180 องศา');
+        ok(code.includes('interpolateTurnTicks'), 'ต้องแทรกค่า tick สำหรับมุมระหว่างจุดคาลิเบรต');
+        ok(code.includes('const int TURN_PWM   = 2000;'), 'ต้องเก็บค่า PWM หมุนที่คาลิเบรตไว้');
+        ok(code.includes('profile.step(left, right, targetL, targetR'), 'ต้องประสานความคืบหน้าล้อซ้าย-ขวาขณะหมุน');
+        const customCode = generateArduinoCode({
+          route: mockRoute,
+          profile: 'encoder',
+          boardType: 'uno_r4',
+          settings: { turnRight90LeftTicks: 31.5 },
+        });
+        ok(/TURN_RIGHT_LEFT_TICKS_90\s+= 31\.50f;/.test(customCode), 'ต้องนำค่า tick ที่ผู้ใช้ตั้งไปสร้างโค้ดตรงๆ');
+        const distanceScaledCode = generateArduinoCode({
+          route: mockRoute,
+          profile: 'encoder',
+          boardType: 'uno_r4',
+          settings: { straightDistanceScale: 1.11 },
+        });
+        ok(distanceScaledCode.includes('const float STRAIGHT_DISTANCE_SCALE = 1.110f;'), 'ต้องส่งออกตัวคูณระยะทางตรงจาก Settings');
+        ok(distanceScaledCode.includes('distanceCM / LEFT_CM_PER_TICK * STRAIGHT_DISTANCE_SCALE'), 'ต้องนำตัวคูณระยะไปเพิ่มเป้า Encoder ล้อซ้าย');
+        ok(distanceScaledCode.includes('distanceCM / RIGHT_CM_PER_TICK * STRAIGHT_DISTANCE_SCALE'), 'ต้องนำตัวคูณระยะไปเพิ่มเป้า Encoder ล้อขวา');
+        equal(calculateRecommendedPwm({ speedMPerSec: 0.35, boardType: 'uno_r4' }).turnPwm, 2000);
+        equal(calculateRecommendedPwm({ speedMPerSec: 0.35, boardType: 'uno_r4' }).drivePwm, 1850);
+      });
+
+      test('แปลงคำสั่งเส้นทางเป็นโค้ด Arduino โหมด Timed Delay (อิง ArduinoProj/SPEED.ino)', () => {
+        const mockRoute = {
+          totalDistance: 2.0,
+          estimatedSeconds: 6.0,
+          goalType: 'regular',
+          commands: [
+            { type: 'reverse', distance: 0.5, label: 'ถอยหลัง 0.50 เมตร' },
+            { type: 'turn-right', degrees: 90, label: 'หมุนขวา 90°' },
+            { type: 'forward', distance: 1.5, label: 'เดินหน้า 1.50 เมตร' },
+          ],
+        };
+        const code = generateArduinoCode({
+          route: mockRoute,
+          profile: 'timed',
+          settings: { speed: 0.5, turnSeconds90: 0.4 },
+        });
+        ok(code.includes('#define m1 9'), 'ต้องมี m1 9 ตาม SPEED.ino');
+        ok(code.includes('#define e1 5'), 'ต้องมี e1 5 ตาม SPEED.ino');
+        ok(code.includes('moveReverse'), 'ต้องมีฟังก์ชันถอยหลัง');
+        ok(code.includes('turnRight'), 'ต้องมีฟังก์ชันเลี้ยวขวา');
+        ok(code.includes('moveForward'), 'ต้องมีฟังก์ชันเดินหน้า');
+        ok(code.includes('1000'), 'คำนวณเวลาดีเลย์ 0.5m / 0.5mps = 1000ms');
+        ok(code.includes('const int PWM_DRIVE = 148;'), 'ต้องแปลง PWM 12-bit เป็น 8-bit ก่อนใช้กับโหมด Delay');
+      });
+    } catch (error) {
+      record('โหลดโมดูล arduino-exporter.js', error);
+    }
+
+    summary.textContent = `${passed} ผ่าน · ${failed} ไม่ผ่าน`;
+    summary.dataset.status = failed === 0 ? 'pass' : 'fail';
+    document.documentElement.dataset.testStatus = failed === 0 ? 'pass' : 'fail';
+    fetch('/log?msg=' + encodeURIComponent('SUMMARY: ' + summary.textContent)).catch(() => {});
+  </script>
+</body>
+</html>

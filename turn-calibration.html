@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ทดสอบและ Calibrate มุมเลี้ยวก่อนลงสนาม</title>
+  <link rel="stylesheet" href="./styles.css?v=6">
+  <link rel="stylesheet" href="./turn-calibration.css?v=5">
+</head>
+<body>
+  <main class="calibration-shell">
+    <!-- Top Nav Bar -->
+    <div class="top-nav-bar">
+      <a href="./index.html" class="back-link">
+        <span class="back-arrow">←</span> กลับไปหน้าแผนที่ 3D Simulator
+      </a>
+      <div class="top-nav-meta">
+        <span class="sync-badge" id="sync-status">⚡ ซิงค์เส้นทางกับหน้าแผนที่</span>
+      </div>
+    </div>
+
+    <!-- Hero Header with Visual Stepper -->
+    <header class="calibration-hero">
+      <div class="hero-badge">WORKFLOW CALIBRATION</div>
+      <h1>ระบบทดสอบและปรับจูนมุมเลี้ยว</h1>
+      <p class="hero-desc">
+        เพื่อความแม่นยำสูงสุดก่อนลงแข่ง: ทอยลูกเต๋า ➔ ระบบดึงเฉพาะมุมเลี้ยวที่ต้องใช้จริงในสนามมาสร้างโค้ดทดสอบ ➔ วัดมุมจริงบนพื้น แล้วระบบจะคำนวณ Tick ที่ถูกต้องให้อัตโนมัติทันที
+      </p>
+
+      <!-- Stepper Indicator -->
+      <nav class="stepper-bar" aria-label="ขั้นตอนการทำงาน">
+        <div class="step-node active" id="stepper-1" data-step="1">
+          <div class="step-badge-num">1</div>
+          <div class="step-label-group">
+            <span class="step-title">แต้มลูกเต๋า & เส้นทาง</span>
+            <small class="step-caption">คำนวณมุมที่ต้องใช้จริง</small>
+          </div>
+        </div>
+        <div class="step-line" id="line-1-2"></div>
+        <div class="step-node" id="stepper-2" data-step="2">
+          <div class="step-badge-num">2</div>
+          <div class="step-label-group">
+            <span class="step-title">ทดสอบหมุน & วัดมุมจริง</span>
+            <small class="step-caption">จูน Tick แบบเรียลไทม์</small>
+          </div>
+        </div>
+        <div class="step-line" id="line-2-3"></div>
+        <div class="step-node" id="stepper-3" data-step="3">
+          <div class="step-badge-num">3</div>
+          <div class="step-label-group">
+            <span class="step-title">รับโค้ดสนามจริงพร้อมแข่ง</span>
+            <small class="step-caption">RobotRoute.ino ฉบับจูนแล้ว</small>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <!-- ขั้นตอนที่ 1: กำหนดแต้มลูกเต๋า & เส้นทางที่คำนวณได้ -->
+    <section class="wizard-card" id="card-dice">
+      <div class="card-header">
+        <div class="header-left">
+          <span class="badge-step">ขั้นตอนที่ 1</span>
+          <h2>กำหนดแต้มลูกเต๋า & ตรวจสอบเส้นทาง</h2>
+        </div>
+        <button id="randomize-dice" class="secondary-button" type="button">
+          🎲 สุ่มแต้มใหม่
+        </button>
+      </div>
+
+      <div class="dice-cards-grid">
+        <div class="dice-box">
+          <div class="dice-box-header">
+            <span class="dice-box-icon">🧭</span>
+            <span class="dice-box-title">ทิศหุ่นยนต์</span>
+          </div>
+          <select id="direction-die" class="modern-select">
+            <option value="1">🎲 1 · หันบน</option>
+            <option value="2">🎲 2 · หันขวา</option>
+            <option value="3" selected>🎲 3 · หันล่าง</option>
+            <option value="4">🎲 4 · หันซ้าย</option>
+            <option value="5">🎲 5 · หันบน</option>
+            <option value="6">🎲 6 · หันขวา</option>
+          </select>
+          <small class="dice-hint">1=บน · 2=ขวา · 3=ล่าง · 4=ซ้าย</small>
+        </div>
+
+        <div class="dice-box">
+          <div class="dice-box-header">
+            <span class="dice-box-icon">📦</span>
+            <span class="dice-box-title">กล่องซ้าย (ตั้ง)</span>
+          </div>
+          <select id="left-die" class="modern-select">
+            <option value="2" selected>🎲 2 ช่อง (0.23 ม.)</option>
+            <option value="3">🎲 3 ช่อง (0.34 ม.)</option>
+            <option value="4">🎲 4 ช่อง (0.46 ม.)</option>
+            <option value="5">🎲 5 ช่อง (0.57 ม.)</option>
+            <option value="6">🎲 6 ช่อง (0.69 ม.)</option>
+            <option value="7">🎲 7 ช่อง (0.80 ม.)</option>
+            <option value="8">🎲 8 ช่อง (0.91 ม.)</option>
+            <option value="9">🎲 9 ช่อง (1.03 ม.)</option>
+            <option value="10">🎲 10 ช่อง (1.14 ม.)</option>
+            <option value="11">🎲 11 ช่อง (1.26 ม.)</option>
+            <option value="12">🎲 12 ช่อง (1.37 ม.)</option>
+          </select>
+          <small class="dice-hint">เลื่อนขวาช่องละ 4.5 นิ้ว</small>
+        </div>
+
+        <div class="dice-box">
+          <div class="dice-box-header">
+            <span class="dice-box-icon">📦</span>
+            <span class="dice-box-title">กล่องขวา (นอน)</span>
+          </div>
+          <select id="right-die" class="modern-select">
+            <option value="2" selected>🎲 2 ช่อง (0.23 ม.)</option>
+            <option value="3">🎲 3 ช่อง (0.34 ม.)</option>
+            <option value="4">🎲 4 ช่อง (0.46 ม.)</option>
+            <option value="5">🎲 5 ช่อง (0.57 ม.)</option>
+            <option value="6">🎲 6 ช่อง (0.69 ม.)</option>
+            <option value="7">🎲 7 ช่อง (0.80 ม.)</option>
+            <option value="8">🎲 8 ช่อง (0.91 ม.)</option>
+            <option value="9">🎲 9 ช่อง (1.03 ม.)</option>
+            <option value="10">🎲 10 ช่อง (1.14 ม.)</option>
+            <option value="11">🎲 11 ช่อง (1.26 ม.)</option>
+            <option value="12">🎲 12 ช่อง (1.37 ม.)</option>
+          </select>
+          <small class="dice-hint">เลื่อนซ้ายช่องละ 4.5 นิ้ว</small>
+        </div>
+
+        <div class="dice-box">
+          <div class="dice-box-header">
+            <span class="dice-box-icon">🎯</span>
+            <span class="dice-box-title">โหมดวางแผน</span>
+          </div>
+          <select id="planning-mode" class="modern-select">
+            <option value="fastest">⚡ เร็วที่สุด</option>
+            <option value="score">🎯 เน้นคะแนน 19 นิ้ว</option>
+            <option value="pass" selected>🛡 ปลอดภัย (A*)</option>
+          </select>
+          <small class="dice-hint">กลยุทธ์ค้นหาเส้นทาง</small>
+        </div>
+      </div>
+
+      <!-- Route Flow Summary -->
+      <div class="route-summary-panel">
+        <div class="route-metrics-bar">
+          <div class="metrics-left">
+            <span class="route-pill" id="route-status-pill">กำลังคำนวณ</span>
+            <span id="route-metrics" class="route-metrics-desc">—</span>
+          </div>
+        </div>
+        <div class="route-timeline-wrap">
+          <div class="route-timeline-label">ลำดับคำสั่งเส้นทางสนามจริง:</div>
+          <div class="route-steps-display" id="route-steps-display" aria-label="ลำดับคำสั่งที่คำนวณได้"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ขั้นตอนที่ 2: มุมเลี้ยวที่ต้องทดสอบ & วัดผล (Unified Card Interface) -->
+    <section class="wizard-card" id="card-generator">
+      <div class="card-header">
+        <div class="header-left">
+          <span class="badge-step">ขั้นตอนที่ 2</span>
+          <h2>ทดสอบมุมเลี้ยวจริงบนพื้น & ปรับจูน Tick</h2>
+        </div>
+        <label class="custom-toggle-label">
+          <input type="checkbox" id="custom-angles-toggle"> กำหนดมุมเอง (Manual Mode)
+        </label>
+      </div>
+
+      <!-- Instructions & Code Generator Action Bar -->
+      <div class="how-to-banner">
+        <div class="how-to-steps">
+          <div class="how-step">
+            <span class="how-num">1</span>
+            <span>กดปุ่ม <strong>⚡ สร้างโค้ดทดสอบ</strong> ด้านล่าง แล้วแฟลชลงบอร์ด Arduino</span>
+          </div>
+          <div class="how-step">
+            <span class="how-num">2</span>
+            <span>เปิด <strong>Serial Monitor (115200 baud)</strong> ส่งเลขคำสั่ง <code>1</code>, <code>2</code>... หุ่นจะหมุน</span>
+          </div>
+          <div class="how-step">
+            <span class="how-num">3</span>
+            <span>วัดองศาจริงที่หมุนได้บนพื้น แล้วกรอกลงในการ์ดด้านล่าง ระบบจะคำนวณ Tick ให้ทันที</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Generate Test Action Bar -->
+      <div class="test-generator-bar">
+        <button id="generate-test" class="primary-button" type="button">
+          ⚡ 1. สร้างโค้ดทดสอบ TurnCalibration.ino
+        </button>
+        <button id="download-test" class="secondary-button" type="button" disabled>
+          💾 ดาวน์โหลด .ino
+        </button>
+        <button id="copy-test" class="secondary-button" type="button" disabled>
+          📋 คัดลอกโค้ด
+        </button>
+      </div>
+      <p id="generate-status" class="calibration-status" role="status"></p>
+
+      <div id="test-code-panel" hidden>
+        <details class="code-peek">
+          <summary>🔍 ดูโค้ดทดสอบ TurnCalibration.ino</summary>
+          <pre id="test-code"></pre>
+        </details>
+      </div>
+
+      <!-- Unified Interactive Turn Cards Grid -->
+      <div class="turns-heading-bar">
+        <div id="turns-intro" class="turns-intro-text">มุมเลี้ยวที่พบในเส้นทางที่ต้องทดสอบ:</div>
+      </div>
+
+      <div class="turn-cards-grid" id="trial-grid">
+        <!-- Rendered dynamically as unified cards -->
+      </div>
+
+      <!-- Hidden results grid placeholder for backward compatibility -->
+      <div id="results-grid" hidden></div>
+
+      <!-- Save Actions Panel -->
+      <div class="save-actions-panel">
+        <div class="save-actions-info">
+          <span class="save-indicator-icon">💡</span>
+          <div>
+            <strong id="save-info-title">ระบบคำนวณ Tick ให้อัตโนมัติทันทีที่กรอกตัวเลข</strong>
+            <p id="save-info-desc">เมื่อกรอกมุมจริงที่วัดได้แล้ว กดปุ่ม “บันทึกค่าที่คำนวณ” เพื่ออัปเดตเส้นทางและโค้ดสนามจริงทันที</p>
+          </div>
+        </div>
+        <div class="save-actions-buttons">
+          <button id="calculate-ticks" class="secondary-button" type="button" disabled style="display:none;">คำนวณ tick ใหม่</button>
+          <button id="save-ticks" class="primary-button save-cta-btn" type="button" disabled>
+            💾 2. บันทึกค่า Tick & รับโค้ดสนามจริง ➔
+          </button>
+        </div>
+      </div>
+      <p id="result-status" class="calibration-status" role="status"></p>
+    </section>
+
+    <!-- ขั้นตอนที่ 3: โค้ดสนามจริงพร้อมแข่ง (Field Code Export) -->
+    <section class="wizard-card field-export-card" id="field-export-panel" hidden>
+      <div class="field-success-banner">
+        <div class="success-badge-icon">🎉</div>
+        <div class="success-content">
+          <h3>Calibrate สำเร็จ! โค้ดสนามจริงพร้อมใช้งาน</h3>
+          <p>
+            ค่า Tick ที่คำนวณได้ถูกบันทึกลงในระบบเรียบร้อยแล้ว โค้ดสนามจริง <code>RobotRoute.ino</code> ได้รับการอัปเดตให้หมุนด้วยความแม่นยำสูงสุด
+          </p>
+        </div>
+      </div>
+
+      <div class="field-actions-bar">
+        <button id="download-field-route" class="primary-button field-cta-btn" type="button">
+          💾 ดาวน์โหลดโค้ดสนามจริง (RobotRoute.ino)
+        </button>
+        <button id="copy-field-route" class="secondary-button" type="button">
+          📋 คัดลอกโค้ดสนามจริง
+        </button>
+        <button id="retest-btn" class="secondary-button" type="button">
+          ↺ ทดสอบมุมซ้ำอีกรอบ
+        </button>
+        <a href="./index.html" class="button-link-accent">
+          🗺️ กลับไปดูแบบจำลอง 3D ➔
+        </a>
+      </div>
+
+      <details class="code-peek">
+        <summary>🔍 ดูโค้ด Arduino สำหรับสนามจริง (RobotRoute.ino)</summary>
+        <pre id="field-code-display"></pre>
+      </details>
+    </section>
+  </main>
+  <script type="module" src="./turn-calibration-page.js?v=5"></script>
+</body>
+</html>

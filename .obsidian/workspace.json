@@ -1,0 +1,213 @@
+{
+  "main": {
+    "id": "e95968979ec98e54",
+    "type": "split",
+    "children": [
+      {
+        "id": "bb3e47475b455622",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "873e2f30151343ec",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Map Datail.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Map Datail"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "fce8dd90db432299",
+    "type": "split",
+    "children": [
+      {
+        "id": "4389ee49bdfd3599",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "41848219e8caa5c5",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "e2ca27830705f216",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "393597afaf4b2d3f",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "25b268237af5ad87",
+    "type": "split",
+    "children": [
+      {
+        "id": "bdbeb9fea2c1c29c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "38bf3d21b13da9fc",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Map Datail.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "0822cd831bbc4c03",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Map Datail.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "3e2a2748b6a9350b",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "88eed149b60c2291",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "8c965a62bf16b025",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Map Datail.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "873e2f30151343ec",
+  "lastOpenFiles": [
+    "arena.js",
+    "measurement-layer.js",
+    "path-planner.js",
+    "settings-store.js",
+    "docs/superpowers/plans/2026-09-21-route-planning-measurements.md",
+    "docs/superpowers/specs/2026-09-21-route-planning-measurements-design.md",
+    "arena-loading.js",
+    "README.md",
+    "styles.css",
+    "index.html",
+    "tests/arena-ui.test.html",
+    "arena-state.js",
+    "tests/arena-state.test.html",
+    "tests",
+    "docs/superpowers/plans/2026-09-21-threejs-robot-arena.md",
+    "docs/superpowers/specs/2026-09-21-threejs-robot-arena-design.md",
+    "measure_map.jpeg",
+    "Map Datail.md",
+    "Untitled.canvas"
+  ]
+}

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="th">
+<head><meta charset="utf-8"><title>ทดสอบเส้นทางทุกแต้ม</title></head>
+<body>
+<h1>ทดสอบเส้นทางทุกแต้ม</h1>
+<pre id="result">กำลังทดสอบ…</pre>
+<script type="module">
+import { buildArenaState, ARENA } from '../arena-state.js';
+import { DEFAULT_SETTINGS } from '../settings-store.js';
+import { buildCollisionContext, planRoute, pointIsBlocked } from '../path-planner.js';
+import { generateArduinoCode } from '../arduino-exporter.js';
+
+const summary = { totalCases: 0, found: 0, noPath: 0, errors: [] };
+for (let directionDie = 1; directionDie <= 6; directionDie++) {
+  for (let leftDie = 2; leftDie <= 12; leftDie++) {
+    for (let rightDie = 2; rightDie <= 12; rightDie++) {
+      summary.totalCases++;
+      try {
+        const diceState = buildArenaState({ directionDie, leftDie, rightDie });
+        const route = planRoute({ arena: ARENA, diceState, settings: DEFAULT_SETTINGS });
+        if (route.status !== 'found') { summary.noPath++; continue; }
+        summary.found++;
+        const first = route.points[0];
+        if (Math.hypot(first.x - ARENA.robot.x, first.z - ARENA.robot.z) > 1e-6) {
+          throw new Error('พิกัดเริ่มของเส้นทางไม่ตรงกับรถจริง');
+        }
+        const context = { ...buildCollisionContext({ arena: ARENA, diceState, settings: DEFAULT_SETTINGS }), targetGoalType: route.goalType };
+        for (const segment of route.segments) {
+          const count = Math.max(1, Math.ceil(segment.distance / 0.01));
+          for (let step = 0; step <= count; step++) {
+            const t = step / count;
+            if (pointIsBlocked({
+              x: segment.from.x + (segment.to.x - segment.from.x) * t,
+              z: segment.from.z + (segment.to.z - segment.from.z) * t,
+            }, context)) throw new Error('เส้นทางตัดผ่านสิ่งกีดขวาง');
+          }
+        }
+        if (!generateArduinoCode({ route, diceState, settings: DEFAULT_SETTINGS, arena: ARENA }).includes('ROUTE_STEPS')) {
+          throw new Error('ส่งออกโค้ด Arduino ไม่สำเร็จ');
+        }
+      } catch (error) {
+        summary.errors.push({ directionDie, leftDie, rightDie, message: error.message });
+      }
+    }
+  }
+}
+document.querySelector('#result').textContent = JSON.stringify(summary, null, 2);
+</script>
+</body>
+</html>

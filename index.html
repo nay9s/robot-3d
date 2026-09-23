@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="แผนภาพสนามสอบหุ่นยนต์ 3 มิติ ปรับแต้มลูกเต๋าและตำแหน่งสิ่งกีดขวางได้">
+  <title>สนามสอบหุ่นยนต์ 3 มิติ</title>
+  <link rel="stylesheet" href="./styles.css?v=5">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">ROBOT LAB · แผนผังวัดจริง 2.90 × 3.25 เมตร</p>
+        <h1>สนามสอบหุ่นยนต์</h1>
+        <p class="hero-copy">ปรับแต้มลูกเต๋าเพื่อดูทิศเริ่มต้นและตำแหน่งสิ่งกีดขวางในสนามจริง</p>
+      </div>
+      <div class="legend" aria-label="คำอธิบายสี">
+        <span><i class="legend-dot robot-dot"></i>หุ่นยนต์</span>
+        <span><i class="legend-dot obstacle-dot"></i>สิ่งกีดขวาง</span>
+        <span><i class="legend-dot bonus-dot"></i>ช่องซ้าย 19" (+1 คะแนน)</span>
+        <span><i class="legend-dot exit-dot"></i>ช่องขวา 20" (ปกติ)</span>
+      </div>
+    </header>
+
+    <section class="workspace">
+      <aside class="control-panel" aria-label="ตั้งค่าแต้มลูกเต๋า">
+        <div class="panel-heading">
+          <div>
+            <p class="section-kicker">ตั้งค่าการสุ่ม</p>
+            <h2>แต้มลูกเต๋า</h2>
+          </div>
+          <div class="panel-actions">
+            <button class="icon-button" id="arduino-open" type="button" title="แปลงเป็นโค้ด Arduino">⚡ Arduino</button>
+            <button class="icon-button" id="settings-open" type="button">Settings</button>
+            <button class="icon-button" id="randomize" type="button">สุ่มแต้ม</button>
+          </div>
+          <a class="calibration-link" href="./turn-calibration.html">🧭 ทดสอบมุมก่อนลงสนาม</a>
+        </div>
+
+        <div class="dice-controls">
+          <label class="dice-field" for="direction-die">
+            <span class="dice-label">ทิศหุ่นยนต์</span>
+            <select id="direction-die" aria-describedby="direction-help">
+              <option value="1">🎲 1 · หันบน</option>
+              <option value="2">🎲 2 · หันขวา</option>
+              <option value="3" selected>🎲 3 · หันล่าง</option>
+              <option value="4">🎲 4 · หันซ้าย</option>
+              <option value="5">🎲 5 · หันบน</option>
+              <option value="6">🎲 6 · หันขวา</option>
+            </select>
+            <small id="direction-help">1=บน · 2=ขวา · 3=ล่าง · 4=ซ้าย (หมุนตามเข็ม)</small>
+          </label>
+
+          <label class="dice-field" for="left-die">
+            <span class="dice-label">กล่องซ้าย</span>
+            <select id="left-die">
+              <option value="2" selected>🎲 2 ช่อง (0.23 ม.)</option>
+              <option value="3">🎲 3 ช่อง (0.34 ม.)</option>
+              <option value="4">🎲 4 ช่อง (0.46 ม.)</option>
+              <option value="5">🎲 5 ช่อง (0.57 ม.)</option>
+              <option value="6">🎲 6 ช่อง (0.69 ม.)</option>
+              <option value="7">🎲 7 ช่อง (0.80 ม.)</option>
+              <option value="8">🎲 8 ช่อง (0.91 ม.)</option>
+              <option value="9">🎲 9 ช่อง (1.03 ม.)</option>
+              <option value="10">🎲 10 ช่อง (1.14 ม.)</option>
+              <option value="11">🎲 11 ช่อง (1.26 ม.)</option>
+              <option value="12">🎲 12 ช่อง (1.37 ม.)</option>
+            </select>
+            <small>เลื่อนไปทางขวา ช่องละ 4.5 นิ้ว</small>
+          </label>
+
+          <label class="dice-field" for="right-die">
+            <span class="dice-label">กล่องขวา</span>
+            <select id="right-die">
+              <option value="2" selected>🎲 2 ช่อง (0.23 ม.)</option>
+              <option value="3">🎲 3 ช่อง (0.34 ม.)</option>
+              <option value="4">🎲 4 ช่อง (0.46 ม.)</option>
+              <option value="5">🎲 5 ช่อง (0.57 ม.)</option>
+              <option value="6">🎲 6 ช่อง (0.69 ม.)</option>
+              <option value="7">🎲 7 ช่อง (0.80 ม.)</option>
+              <option value="8">🎲 8 ช่อง (0.91 ม.)</option>
+              <option value="9">🎲 9 ช่อง (1.03 ม.)</option>
+              <option value="10">🎲 10 ช่อง (1.14 ม.)</option>
+              <option value="11">🎲 11 ช่อง (1.26 ม.)</option>
+              <option value="12">🎲 12 ช่อง (1.37 ม.)</option>
+            </select>
+            <small>เลื่อนไปทางซ้าย ช่องละ 4.5 นิ้ว</small>
+          </label>
+        </div>
+
+        <div class="status-card">
+          <span class="status-label">สถานะสนาม</span>
+          <p id="arena-status" aria-live="polite">กำลังเตรียมสนาม…</p>
+        </div>
+
+        <label class="measurement-toggle" for="measurement-toggle">
+          <span>
+            <strong>แสดงการวัด</strong>
+            <small>ระยะทั้งหมดแสดงเป็นเมตร</small>
+          </span>
+          <input id="measurement-toggle" type="checkbox" role="switch">
+        </label>
+
+        <section class="route-card" aria-labelledby="route-heading">
+          <div class="route-card-heading">
+            <div>
+              <span class="status-label">ROUTE PLAN</span>
+              <h2 id="route-heading">เส้นทางแนะนำ</h2>
+            </div>
+            <span id="route-status" class="route-state" data-state="calculating" aria-live="polite">กำลังคำนวณ</span>
+          </div>
+          <div class="route-mode-row">
+            <label for="route-source">เส้นทาง:</label>
+            <select id="route-source">
+              <option value="auto">คำนวณอัตโนมัติ</option>
+              <option value="manual">ลากวางเองบนแมพ (โหมดอิสระ)</option>
+            </select>
+          </div>
+          <div id="manual-route-tools" hidden>
+            <p>คลิกเพิ่มจุดบนสนาม หรือคลิกลากหมุดจุดเพื่อย้ายตำแหน่งได้อย่างอิสระ ไม่จำกัดระยะกล่อง/กำแพง พร้อมจำลองและส่งออกโค้ดจริง</p>
+            <label><input id="manual-route-snap" type="checkbox" checked> ยึดจุดกับ Grid ใน Settings</label>
+            <div class="manual-route-actions">
+              <button id="manual-route-undo" type="button" disabled>↶ ลบจุดล่าสุด</button>
+              <button id="manual-route-clear" type="button" disabled>ล้างเส้นทาง</button>
+            </div>
+            <p id="manual-route-feedback" role="status" aria-live="polite"></p>
+            <ol id="manual-route-points" aria-label="จุดผ่านที่เลือก"></ol>
+          </div>
+          <div id="automatic-route-tools" class="route-mode-row">
+            <span class="mode-label">โหมด:</span>
+            <select id="quick-planning-mode" aria-label="เลือกโหมดวางแผน">
+              <option value="fastest">⚡ เร็วที่สุด (ใช้มุมฉากถ้าปิดทางตรง)</option>
+              <option value="score">🎯 เน้นคะแนน 19 นิ้ว</option>
+              <option value="pass">🛡 เน้นผ่านปลอดภัย (A*)</option>
+            </select>
+          </div>
+          <div class="route-stats">
+            <div><span>เป้าหมาย</span><strong id="route-goal">—</strong></div>
+            <div><span>ระยะรวม</span><strong id="route-distance">—</strong></div>
+            <div><span>จำนวนเลี้ยว</span><strong id="route-turns">—</strong></div>
+            <div><span>เวลาประมาณ</span><strong id="route-time">—</strong></div>
+            <div><span>ระยะเผื่อช่องออก</span><strong id="route-exit-clearance">—</strong></div>
+          </div>
+          <h3>ลำดับคำสั่ง</h3>
+          <ol id="route-commands" class="route-commands"><li>กำลังคำนวณเส้นทาง…</li></ol>
+          <div class="route-export-actions">
+            <button class="primary-button export-arduino-btn" id="route-arduino-btn" type="button">
+              ⚡ แปลงเป็นโค้ด Arduino (.ino)
+            </button>
+            <button class="secondary-button" id="route-calibrate-btn" type="button" style="width: 100%; margin-top: 0.45rem; padding: 0.6rem; font-size: 0.88rem; font-weight: 650; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;">
+              🧭 ทดสอบมุมจากเส้นทางนี้ (Calibrate)
+            </button>
+          </div>
+        </section>
+
+        <div class="measurement-list" aria-label="ข้อมูลสนาม">
+          <div><span>ขนาดสนาม</span><strong>วัดจริง 2.90 × 3.25 เมตร</strong></div>
+          <div><span>กระเบื้อง</span><strong>20 ช่อง (ช่องละ 14.5 ซม.)</strong></div>
+          <div><span>ขนาดกล่อง</span><strong>ซ้าย 2 ช่อง · ขวา 2.5 ช่อง</strong></div>
+          <div><span>ช่องทางออก</span><strong>39 นิ้ว</strong></div>
+        </div>
+      </aside>
+
+      <section class="viewport-panel" aria-label="แผนภาพสนามสามมิติ">
+        <div class="viewport-toolbar">
+          <div>
+            <span class="live-indicator"></span>
+            <span>มุมมองสนาม</span>
+          </div>
+          <div class="view-actions">
+            <button id="grid-toggle" class="grid-toggle-btn" type="button" title="เปิดเส้นตารางและป้ายพิกัด">📐 พิกัด Grid</button>
+            <button id="top-view" type="button">มองจากด้านบน</button>
+            <button id="reset-view" type="button">รีเซ็ตมุมมอง</button>
+          </div>
+        </div>
+        <div class="simulator-bar" aria-label="เครื่องมือจำลองการวิ่งของหุ่นยนต์">
+          <div class="simulator-actions">
+            <button id="sim-play-pause" class="primary-button sim-btn" type="button" aria-label="เล่นแบบจำลอง">
+              <span id="sim-play-icon" aria-hidden="true">▶</span>
+              <span id="sim-play-label">เล่นจำลอง (Play)</span>
+            </button>
+            <button id="sim-reset" class="icon-button sim-btn" type="button" aria-label="รีเซ็ตการจำลอง">
+              <span>↺ รีเซ็ต</span>
+            </button>
+            <label class="sim-speed-label" for="sim-speed">
+              <span>ความเร็ว:</span>
+              <select id="sim-speed" aria-label="ความเร็วจำลอง">
+                <option value="1">1×</option>
+                <option value="1.5">1.5×</option>
+                <option value="2" selected>2×</option>
+                <option value="3">3×</option>
+                <option value="5">5×</option>
+              </select>
+            </label>
+          </div>
+          <div class="sim-status-wrap">
+            <span id="sim-badge" class="sim-badge" data-state="idle">พร้อมจำลอง</span>
+            <span id="sim-step-desc" class="sim-step-desc" aria-live="polite"></span>
+          </div>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="arena-canvas" aria-label="สนามหุ่นยนต์สามมิติ มีจุดเริ่มต้นมุมขวาบนและทางออกมุมซ้ายล่าง"></canvas>
+          <div id="coord-hud" class="coord-hud" aria-live="polite">
+            <div class="coord-hud-badge">🎯 พิกัดชี้บนสนาม</div>
+            <div class="coord-hud-body">
+              <span id="coord-hud-xy" class="coord-hud-xy">X: <strong>0.00</strong> m | Y: <strong>0.00</strong> m</span>
+              <span id="coord-hud-extra" class="coord-hud-extra">(ชี้เมาส์บนสนาม)</span>
+            </div>
+          </div>
+          <div id="coord-hover-tooltip" class="coord-hover-tooltip" hidden></div>
+          <p id="webgl-error" class="error-message" role="alert" hidden></p>
+          <div class="orbit-hint" aria-hidden="true">ลากเพื่อหมุน · เลื่อนเพื่อซูม · ชี้เมาส์ดูพิกัด (X, Y)</div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="settings-dialog" aria-labelledby="settings-title">
+    <form id="settings-form" method="dialog" novalidate>
+      <div class="dialog-heading">
+        <div>
+          <p class="section-kicker">ROUTE SETTINGS</p>
+          <h2 id="settings-title">ตั้งค่าหุ่นยนต์และเส้นทาง</h2>
+        </div>
+        <button id="settings-cancel" class="dialog-close" type="button" aria-label="ปิด Settings">×</button>
+      </div>
+
+      <div class="settings-grid">
+        <label class="settings-field" for="setting-width">
+          <span>ความกว้างหุ่นยนต์ <small>(เมตร)</small></span>
+          <input id="setting-width" name="width" type="number" min="0.10" max="0.80" step="0.01" inputmode="decimal" required>
+          <small class="field-error" data-error-for="width"></small>
+        </label>
+        <label class="settings-field" for="setting-length">
+          <span>ความยาวหุ่นยนต์ <small>(เมตร)</small></span>
+          <input id="setting-length" name="length" type="number" min="0.10" max="0.80" step="0.01" inputmode="decimal" required>
+          <small class="field-error" data-error-for="length"></small>
+        </label>
+        <label class="settings-field" for="setting-clearance">
+          <span>ระยะเผื่อจากสิ่งกีดขวาง <small>(เมตร)</small></span>
+          <input id="setting-clearance" name="clearance" type="number" min="0" max="0.50" step="0.01" inputmode="decimal" required>
+          <small class="field-error" data-error-for="clearance"></small>
+        </label>
+        <label class="settings-field" for="setting-exit-clearance">
+          <span>ระยะเผื่อตอนผ่านช่องออก <small>(เมตร)</small></span>
+          <input id="setting-exit-clearance" name="exitClearance" type="number" min="0" max="0.08" step="0.01" inputmode="decimal" required>
+          <small>ค่าเริ่มต้น 0.04 ม. แยกจากระยะเผื่อสิ่งกีดขวางเพื่อให้หุ่นผ่านช่อง 19–20 นิ้วได้จริง</small>
+          <small class="field-error" data-error-for="exitClearance"></small>
+        </label>
+        <label class="settings-field" for="setting-speed">
+          <span>ความเร็วเดินตรง <small>(เมตร/วินาที)</small></span>
+          <input id="setting-speed" name="speed" type="number" min="0.05" max="2" step="0.05" inputmode="decimal" required>
+          <small class="field-error" data-error-for="speed"></small>
+        </label>
+        <label class="settings-field" for="setting-straight-distance-scale">
+          <span>ตัวคูณระยะทางตรง</span>
+          <input id="setting-straight-distance-scale" name="straightDistanceScale" type="number" min="0.50" max="2.00" step="0.01" inputmode="decimal" required>
+          <small>ใช้ชดเชยระยะรวม: สั่ง 100 ซม. แต่วิ่งจริง 90 ซม. ตั้ง 1.11; ถ้าคาลิเบรตระยะต่อ tick ของล้อแล้ว ให้เริ่มที่ 1.00 เพื่อไม่ชดเชยซ้ำ</small>
+          <small class="field-error" data-error-for="straightDistanceScale"></small>
+        </label>
+        <label class="settings-field" for="setting-left-cm-per-tick">
+          <span>ล้อซ้ายเคลื่อนที่ต่อ 1 tick <small>(ซม.)</small></span>
+          <input id="setting-left-cm-per-tick" name="leftCmPerTick" type="number" min="0.30" max="0.80" step="0.001" inputmode="decimal" required>
+          <small>เริ่มที่ 0.55 ซม.; วัดระยะจริงของล้อซ้ายแล้วปรับแยก</small>
+          <small class="field-error" data-error-for="leftCmPerTick"></small>
+        </label>
+        <label class="settings-field" for="setting-right-cm-per-tick">
+          <span>ล้อขวาเคลื่อนที่ต่อ 1 tick <small>(ซม.)</small></span>
+          <input id="setting-right-cm-per-tick" name="rightCmPerTick" type="number" min="0.30" max="0.80" step="0.001" inputmode="decimal" required>
+          <small>เริ่มที่ 0.55 ซม.; ใช้ค่าแยกเมื่อล้อสองข้างวิ่งไม่เท่ากัน</small>
+          <small class="field-error" data-error-for="rightCmPerTick"></small>
+        </label>
+        <label class="settings-field" for="setting-turn-time">
+          <span>เวลาเลี้ยว 90° <small>(วินาที)</small></span>
+          <input id="setting-turn-time" name="turnSeconds90" type="number" min="0.10" max="5" step="0.05" inputmode="decimal" required>
+          <small class="field-error" data-error-for="turnSeconds90"></small>
+        </label>
+        <div class="turn-calibration-panel">
+          <strong>ปรับมุมจากผลทดสอบบนพื้น</strong>
+          <small><strong>หมุนเลยเป้าให้กด “− ลด”</strong> · หมุนไม่ถึงให้กด “+ เพิ่ม” ระบบจะปรับ Encoder ของล้อซ้ายและขวาในคำสั่งนั้นพร้อมกันครั้งละ 1 Tick</small>
+          <small>ค่า 90° มาจากผลทดสอบล่าสุด ส่วน 45° และ 180° เป็นค่าชั่วคราว ควรทดสอบแต่ละรายการอย่างน้อย 3 รอบ</small>
+          <div class="turn-calibration-table">
+            <strong>คำสั่งทดสอบ</strong><strong>ค่า L / R</strong><strong>ผลที่เห็น</strong>
+            <div class="turn-calibration-row" data-turn-label="หมุนขวา 45°">
+              <span>หมุนขวา 45°</span>
+              <div class="turn-tick-values">
+                <label>L <input name="turnRight45LeftTicks" type="number" min="1" max="200" step="0.5" aria-label="หมุนขวา 45 องศา ล้อซ้าย" required></label>
+                <label>R <input name="turnRight45RightTicks" type="number" min="1" max="200" step="0.5" aria-label="หมุนขวา 45 องศา ล้อขวา" required></label>
+              </div>
+              <div class="turn-adjust-actions">
+                <button type="button" data-turn-adjust="-1" data-left-key="turnRight45LeftTicks" data-right-key="turnRight45RightTicks">− ลด</button>
+                <button type="button" data-turn-adjust="1" data-left-key="turnRight45LeftTicks" data-right-key="turnRight45RightTicks">+ เพิ่ม</button>
+              </div>
+            </div>
+            <div class="turn-calibration-row" data-turn-label="หมุนซ้าย 45°">
+              <span>หมุนซ้าย 45°</span>
+              <div class="turn-tick-values">
+                <label>L <input name="turnLeft45LeftTicks" type="number" min="1" max="200" step="0.5" aria-label="หมุนซ้าย 45 องศา ล้อซ้าย" required></label>
+                <label>R <input name="turnLeft45RightTicks" type="number" min="1" max="200" step="0.5" aria-label="หมุนซ้าย 45 องศา ล้อขวา" required></label>
+              </div>
+              <div class="turn-adjust-actions">
+                <button type="button" data-turn-adjust="-1" data-left-key="turnLeft45LeftTicks" data-right-key="turnLeft45RightTicks">− ลด</button>
+                <button type="button" data-turn-adjust="1" data-left-key="turnLeft45LeftTicks" data-right-key="turnLeft45RightTicks">+ เพิ่ม</button>
+              </div>
+            </div>
+            <div class="turn-calibration-row" data-turn-label="หมุนขวา 90°">
+              <span>หมุนขวา 90°</span>
+              <div class="turn-tick-values">
+                <label>L <input name="turnRight90LeftTicks" type="number" min="1" max="200" step="0.5" aria-label="หมุนขวา 90 องศา ล้อซ้าย" required></label>
+                <label>R <input name="turnRight90RightTicks" type="number" min="1" max="200" step="0.5" aria-label="หมุนขวา 90 องศา ล้อขวา" required></label>
+              </div>
+              <div class="turn-adjust-actions">
+                <button type="button" data-turn-adjust="-1" data-left-key="turnRight90LeftTicks" data-right-key="turnRight90RightTicks">− ลด</button>
+                <button type="button" data-turn-adjust="1" data-left-key="turnRight90LeftTicks" data-right-key="turnRight90RightTicks">+ เพิ่ม</button>
+              </div>
+            </div>
+            <div class="turn-calibration-row" data-turn-label="หมุนซ้าย 90°">
+              <span>หมุนซ้าย 90°</span>
+              <div class="turn-tick-values">
+                <label>L <input name="turnLeft90LeftTicks" type="number" min="1" max="200" step="0.5" aria-label="หมุนซ้าย 90 องศา ล้อซ้าย" required></label>
+                <label>R <input name="turnLeft90RightTicks" type="number" min="1" max="200" step="0.5" aria-label="หมุนซ้าย 90 องศา ล้อขวา" required></label>
+              </div>
+              <div class="turn-adjust-actions">
+                <button type="button" data-turn-adjust="-1" data-left-key="turnLeft90LeftTicks" data-right-key="turnLeft90RightTicks">− ลด</button>
+                <button type="button" data-turn-adjust="1" data-left-key="turnLeft90LeftTicks" data-right-key="turnLeft90RightTicks">+ เพิ่ม</button>
+              </div>
+            </div>
+            <div class="turn-calibration-row" data-turn-label="หมุนขวา 180°">
+              <span>หมุนขวา 180°</span>
+              <div class="turn-tick-values">
+                <label>L <input name="turnRight180LeftTicks" type="number" min="1" max="400" step="0.5" aria-label="หมุนขวา 180 องศา ล้อซ้าย" required></label>
+                <label>R <input name="turnRight180RightTicks" type="number" min="1" max="400" step="0.5" aria-label="หมุนขวา 180 องศา ล้อขวา" required></label>
+              </div>
+              <div class="turn-adjust-actions">
+                <button type="button" data-turn-adjust="-1" data-left-key="turnRight180LeftTicks" data-right-key="turnRight180RightTicks">− ลด</button>
+                <button type="button" data-turn-adjust="1" data-left-key="turnRight180LeftTicks" data-right-key="turnRight180RightTicks">+ เพิ่ม</button>
+              </div>
+            </div>
+            <div class="turn-calibration-row" data-turn-label="หมุนซ้าย 180°">
+              <span>หมุนซ้าย 180°</span>
+              <div class="turn-tick-values">
+                <label>L <input name="turnLeft180LeftTicks" type="number" min="1" max="400" step="0.5" aria-label="หมุนซ้าย 180 องศา ล้อซ้าย" required></label>
+                <label>R <input name="turnLeft180RightTicks" type="number" min="1" max="400" step="0.5" aria-label="หมุนซ้าย 180 องศา ล้อขวา" required></label>
+              </div>
+              <div class="turn-adjust-actions">
+                <button type="button" data-turn-adjust="-1" data-left-key="turnLeft180LeftTicks" data-right-key="turnLeft180RightTicks">− ลด</button>
+                <button type="button" data-turn-adjust="1" data-left-key="turnLeft180LeftTicks" data-right-key="turnLeft180RightTicks">+ เพิ่ม</button>
+              </div>
+            </div>
+          </div>
+          <small id="turn-adjust-feedback" class="turn-adjust-feedback" aria-live="polite">ยังไม่ได้ปรับค่า</small>
+        </div>
+        <label class="settings-field" for="setting-grid-size">
+          <span>ความละเอียดตาราง</span>
+          <select id="setting-grid-size" name="gridSize">
+            <option value="0.025">ละเอียด 0.025 เมตร</option>
+            <option value="0.05">มาตรฐาน 0.05 เมตร</option>
+            <option value="0.1">เร็ว 0.10 เมตร</option>
+          </select>
+          <small class="field-error" data-error-for="gridSize"></small>
+        </label>
+        <label class="settings-field" for="setting-planning-mode">
+          <span>โหมดวางแผน</span>
+          <select id="setting-planning-mode" name="planningMode">
+            <option value="fastest">เร็วที่สุด (ใช้มุมฉากถ้าปิดทางตรง)</option>
+            <option value="score">เน้นคะแนน 19 นิ้ว (Score)</option>
+            <option value="pass">เน้นผ่านอย่างปลอดภัย (A* Safe Pass)</option>
+          </select>
+          <small class="field-error" data-error-for="planningMode"></small>
+        </label>
+        <label class="settings-switch" for="setting-allow-reverse">
+          <span>
+            <strong>อนุญาตให้ถอยหลัง (Reverse)</strong>
+            <small>ถอยหลังเมื่อหันหน้าเข้ากำแพงหรือลดการหมุน</small>
+          </span>
+          <input id="setting-allow-reverse" name="allowReverse" type="checkbox" role="switch">
+          <small class="field-error" data-error-for="allowReverse"></small>
+        </label>
+        <label class="settings-switch" for="setting-prefer-right-turns">
+          <span>
+            <strong>เลือกหมุนขวาเมื่อทำได้</strong>
+            <small>ใช้การถอยหลังร่วมกับเส้นทางมุมฉาก เพื่อลดการใช้ค่าหมุนซ้ายที่แปรผันสูงกว่า</small>
+          </span>
+          <input id="setting-prefer-right-turns" name="preferRightTurns" type="checkbox" role="switch">
+          <small class="field-error" data-error-for="preferRightTurns"></small>
+        </label>
+        <label class="settings-switch" for="setting-invert-turn-direction">
+          <span>
+            <strong>กลับทิศมอเตอร์ตอนเลี้ยว</strong>
+            <small>เปิดไว้สำหรับหุ่นคันนี้: แก้อาการสั่งหมุนขวาแต่ตัวรถหมุนซ้าย</small>
+          </span>
+          <input id="setting-invert-turn-direction" name="invertTurnDirection" type="checkbox" role="switch">
+          <small class="field-error" data-error-for="invertTurnDirection"></small>
+        </label>
+        <label class="settings-switch" for="setting-direct-line">
+          <span>
+            <strong>ทางตรงอิสระ (Any-Angle Line of Sight)</strong>
+            <small>สร้างมุมเฉียงที่อาจไม่ตรงกับจุดคาลิเบรต แนะนำให้ปิดจนกว่าความคลาดเคลื่อนมุมจะต่ำ</small>
+          </span>
+          <input id="setting-direct-line" name="directLine" type="checkbox" role="switch">
+          <small class="field-error" data-error-for="directLine"></small>
+        </label>
+        <label class="settings-field" for="setting-direct-safety-margin">
+          <span>ระยะเผื่อเพิ่มสำหรับทางตรง <small>(เมตร)</small></span>
+          <input id="setting-direct-safety-margin" name="directSafetyMargin" type="number" min="0" max="0.50" step="0.05" inputmode="decimal" required>
+          <small>ค่าเริ่มต้น 0.20 ม. ใช้กันแนวรถเบนไปเฉี่ยวกล่อง และไม่มีผลกับความกว้างช่องออก</small>
+          <small class="field-error" data-error-for="directSafetyMargin"></small>
+        </label>
+        <label class="settings-switch" for="setting-show-measurements">
+          <span>เปิดการวัดเมื่อเริ่มต้น</span>
+          <input id="setting-show-measurements" name="showMeasurements" type="checkbox" role="switch">
+          <small class="field-error" data-error-for="showMeasurements"></small>
+        </label>
+        <label class="settings-switch" for="setting-use-ultrasonic">
+          <span>
+            <strong>เซนเซอร์ Ultrasonic HC-SR04</strong>
+            <small>ระบบกันชนฉุกเฉิน & เทียบพิกัดตำแหน่งกับกำแพง (Landmark Localization)</small>
+          </span>
+          <input id="setting-use-ultrasonic" name="useUltrasonic" type="checkbox" role="switch">
+          <small class="field-error" data-error-for="useUltrasonic"></small>
+        </label>
+        <label class="settings-switch" for="setting-use-ultrasonic-scan">
+          <span>
+            <strong>สแกนช่องว่างด้านหน้า</strong>
+            <small>หมุน Servo วัดซ้าย–กลาง–ขวาก่อนเดินหน้า และหยุดเมื่อทางกลางแคบเกินไป</small>
+          </span>
+          <input id="setting-use-ultrasonic-scan" name="useUltrasonicScan" type="checkbox" role="switch">
+          <small class="field-error" data-error-for="useUltrasonicScan"></small>
+        </label>
+        <label class="settings-field" for="setting-ultrasonic-trig">
+          <span>ขา Ultrasonic TRIG Pin</span>
+          <input id="setting-ultrasonic-trig" name="ultrasonicTrigPin" type="number" min="0" max="19" step="1" required>
+          <small class="field-error" data-error-for="ultrasonicTrigPin"></small>
+        </label>
+        <label class="settings-field" for="setting-ultrasonic-echo">
+          <span>ขา Ultrasonic ECHO Pin</span>
+          <input id="setting-ultrasonic-echo" name="ultrasonicEchoPin" type="number" min="0" max="19" step="1" required>
+          <small class="field-error" data-error-for="ultrasonicEchoPin"></small>
+        </label>
+        <label class="settings-field" for="setting-ultrasonic-stop">
+          <span>ระยะหยุดฉุกเฉินกันชน <small>(ซม.)</small></span>
+          <input id="setting-ultrasonic-stop" name="ultrasonicStopDist" type="number" min="5" max="60" step="1" required>
+          <small class="field-error" data-error-for="ultrasonicStopDist"></small>
+        </label>
+        <label class="settings-field" for="setting-ultrasonic-open">
+          <span>ระยะถือว่าเป็นช่องเปิด <small>(ซม.)</small></span>
+          <input id="setting-ultrasonic-open" name="ultrasonicOpenDist" type="number" min="20" max="150" step="1" required>
+          <small>ก่อนเดินหน้า ระบบจะเทียบระยะนี้กับระยะคำสั่งและระยะหยุดฉุกเฉิน</small>
+          <small class="field-error" data-error-for="ultrasonicOpenDist"></small>
+        </label>
+        <label class="settings-field" for="setting-servo-center">
+          <span>มุม Servo ตรงกลาง <small>(องศา)</small></span>
+          <input id="setting-servo-center" name="servoCenterAngle" type="number" min="20" max="160" step="1" required>
+          <small class="field-error" data-error-for="servoCenterAngle"></small>
+        </label>
+        <label class="settings-field" for="setting-servo-offset">
+          <span>ช่วงกวาด Servo ซ้าย/ขวา <small>(องศา)</small></span>
+          <input id="setting-servo-offset" name="servoScanOffset" type="number" min="10" max="70" step="1" required>
+          <small class="field-error" data-error-for="servoScanOffset"></small>
+        </label>
+      </div>
+
+      <p class="settings-note">ระบบใช้วงกลมครอบตัวหุ่นยนต์เพื่อเผื่อพื้นที่ตอนเลี้ยว ความปลอดภัยจึงมาก่อนระยะทางและคะแนน</p>
+      <div class="dialog-actions">
+        <button id="settings-reset" type="button">คืนค่าเริ่มต้น</button>
+        <span class="dialog-actions-spacer"></span>
+        <button id="settings-cancel-bottom" type="button">ยกเลิก</button>
+        <button class="primary-button" type="submit">บันทึกและคำนวณใหม่</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="arduino-dialog" class="arduino-dialog" aria-labelledby="arduino-title">
+    <form id="arduino-form" method="dialog">
+      <div class="dialog-heading">
+        <div>
+          <p class="section-kicker">ARDUINO CODE EXPORTER</p>
+          <h2 id="arduino-title">แปลงเส้นทางเป็นโค้ด Arduino (.ino)</h2>
+        </div>
+        <button id="arduino-cancel" class="dialog-close" type="button" aria-label="ปิด Arduino Dialog">×</button>
+      </div>
+
+      <div class="arduino-toolbar">
+        <div class="arduino-toolbar-group">
+          <label for="arduino-profile-select"><strong>รูปแบบโค้ด:</strong></label>
+          <select id="arduino-profile-select">
+            <option value="encoder" selected>โหมด Encoder ปิดลูป (combined_state_sequence.ino)</option>
+            <option value="timed">โหมดนับเวลา Delay (SPEED.ino)</option>
+          </select>
+        </div>
+        <div class="arduino-toolbar-group" id="arduino-board-group">
+          <label for="arduino-board-select"><strong>บอร์ด / PWM:</strong></label>
+          <select id="arduino-board-select">
+            <option value="uno_r4" selected>Uno R4 / ESP32 (12-bit PWM 0–4095)</option>
+            <option value="uno_r3">Uno R3 / Nano / Mega (8-bit PWM 0–255)</option>
+          </select>
+        </div>
+        <div class="arduino-toolbar-group">
+          <label for="arduino-speed-input"><strong>PWM:</strong></label>
+          <input id="arduino-speed-input" type="number" min="50" max="4095" value="2000" style="width: 5.2rem;">
+        </div>
+        <div class="arduino-toolbar-group" id="arduino-turn-group">
+          <strong>ค่าหมุนจริง:</strong>
+          <span id="arduino-turn-summary" style="font-size: 0.8rem; color: var(--muted);">PWM 2000 · R 29/26 · L 29/28 ticks/90°</span>
+        </div>
+        <div class="arduino-toolbar-group" id="arduino-ultrasonic-group">
+          <label for="arduino-ultrasonic-toggle" style="cursor: pointer;">
+            <input id="arduino-ultrasonic-toggle" type="checkbox" checked style="vertical-align: middle; margin-right: 4px;">
+            <strong>HC-SR04</strong>
+          </label>
+          <span style="font-size: 0.8rem; color: var(--muted); margin-left: 4px;">TRIG:</span>
+          <input id="arduino-trig-input" type="number" min="0" max="19" value="4" style="width: 3.2rem;">
+          <span style="font-size: 0.8rem; color: var(--muted); margin-left: 4px;">ECHO:</span>
+          <input id="arduino-echo-input" type="number" min="0" max="19" value="11" style="width: 3.2rem;">
+        </div>
+      </div>
+
+      <div class="arduino-recommendation-bar" id="arduino-recommendation-bar">
+        <div class="arduino-recommendation-info">
+          <span class="arduino-recommendation-badge">💡 ค่าแนะนำจากสูตร Calibrate จริง</span>
+          <span id="arduino-recommendation-text">โหมดสนามจริง: เดินหน้าสูงสุด <strong>4095</strong> | เลี้ยวที่ค่าทดลอง <strong>2000</strong></span>
+        </div>
+        <button id="arduino-apply-rec-btn" class="secondary-button" type="button" style="padding: 0.25rem 0.65rem; font-size: 0.8rem; white-space: nowrap;">⚡ ใช้ค่าแนะนำนี้</button>
+      </div>
+
+      <p class="settings-note"><strong>⚠️ สถานะคาลิเบรต:</strong> ค่า Encoder-only ล่าสุดคลาดเคลื่อนสูงสุดประมาณ 32° จึงให้ใช้โค้ดที่สร้างเพื่อทดลองเท่านั้น จนกว่าการทดสอบซ้ำจะผ่าน</p>
+
+      <div class="arduino-code-container">
+        <pre><code id="arduino-code-display" class="arduino-code">กำลังสร้างโค้ด...</code></pre>
+      </div>
+
+      <div class="dialog-actions">
+        <button id="arduino-download-btn" class="icon-button" type="button">💾 ดาวน์โหลดไฟล์ (.ino)</button>
+        <button id="arduino-copy-btn" class="primary-button" type="button">📋 คัดลอกโค้ด</button>
+        <span class="dialog-actions-spacer"></span>
+        <button id="arduino-close-btn" type="button">ปิด</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="turn-test-dialog" class="arduino-dialog" aria-labelledby="turn-test-title">
+    <form id="turn-test-form" method="dialog">
+      <div class="dialog-heading">
+        <div>
+          <p class="section-kicker">ENCODER TURN CALIBRATION</p>
+          <h2 id="turn-test-title">ทดสอบและ Calibrate มุมเลี้ยวก่อนลงสนาม</h2>
+        </div>
+        <button id="turn-test-cancel" class="dialog-close" type="button" aria-label="ปิด Dialog">×</button>
+      </div>
+
+      <div style="max-height: calc(85vh - 120px); overflow-y: auto; padding: 0.8rem 0.2rem;">
+        <p style="color: var(--muted); font-size: 0.85rem; line-height: 1.55; margin: 0 0 0.85rem;">
+          ระบบดึงมุมเลี้ยวจากเส้นทางปัจจุบัน สร้างโค้ดทดสอบให้คุณอัปโหลดลงหุ่นเพื่อหมุนวัดบนพื้นจริง แล้วกรอกองศาจริงเพื่อคำนวณ Tick ใหม่ทันที
+        </p>
+
+        <div style="background: #111a24; border: 1px solid rgba(255,255,255,0.08); border-radius: 0.75rem; padding: 0.75rem 0.95rem; margin-bottom: 0.85rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; font-size: 0.82rem;">
+            <span id="modal-route-info" style="color: #8ee0ff; font-weight: 600;">เส้นทาง: กำลังโหลด...</span>
+            <a href="./turn-calibration.html" target="_blank" style="color: var(--accent); font-size: 0.8rem; text-decoration: none; font-weight: 600;">เปิดหน้าเต็มจอ ↗</a>
+          </div>
+        </div>
+
+        <div id="modal-trials-container" style="display: grid; gap: 0.75rem; margin-bottom: 0.85rem;">
+          <!-- Dynamically populated -->
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-bottom: 0.65rem;">
+          <button id="modal-generate-test-btn" class="primary-button" type="button">⚡ สร้างโค้ดทดสอบ TurnCalibration.ino</button>
+          <button id="modal-download-test-btn" class="icon-button" type="button" disabled>💾 ดาวน์โหลด</button>
+          <button id="modal-copy-test-btn" type="button" disabled>📋 คัดลอกโค้ด</button>
+        </div>
+
+        <p id="modal-test-status" style="font-size: 0.83rem; min-height: 1.2rem; color: #7af3b9; margin: 0.2rem 0 0.85rem;"></p>
+
+        <div style="background: rgba(105, 212, 255, 0.05); border: 1px solid rgba(105, 212, 255, 0.2); border-radius: 0.75rem; padding: 0.75rem 0.95rem; font-size: 0.82rem; line-height: 1.55; margin-bottom: 0.85rem;">
+          <strong>📋 วิธีทดสอบ:</strong> อัปโหลด <code>TurnCalibration.ino</code> → เปิด Serial Monitor (115200 baud) → วางหุ่นตรงแนวเริ่ม → ส่งเลข <code>1</code>, <code>2</code>... → วัดมุมจริงแล้วกรอกในช่องด้านบน → กด “บันทึก Tick ใหม่ให้โค้ดสนาม”
+        </div>
+
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;">
+          <button id="modal-save-ticks-btn" class="primary-button" type="button" disabled>💾 บันทึก Tick ใหม่ให้โค้ดสนาม</button>
+          <button id="modal-to-arduino-btn" class="secondary-button" type="button">⚡ ไปดูโค้ดสนามจริง (.ino)</button>
+        </div>
+        <p id="modal-save-status" style="font-size: 0.83rem; min-height: 1.2rem; color: #7af3b9; margin-top: 0.5rem;"></p>
+      </div>
+
+      <div class="dialog-actions">
+        <span class="dialog-actions-spacer"></span>
+        <button id="turn-test-close-btn" type="button">ปิด</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module">
+    import { createLoadingController } from './arena-loading.js';
+    window.arenaLoading = createLoadingController(document);
+  </script>
+  <script type="module" src="./arena.js?v=44"></script>
+</body>
+</html>
